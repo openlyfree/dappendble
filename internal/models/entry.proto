@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package models;
+
+option go_package = "github.com/openlyfree/teensy-store/internal/models"; 
+
+message Entry {
+  uint64 column_id = 1;
+  uint64 row_id    = 2;
+  bytes  payload   = 3;
+}

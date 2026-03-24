@@ -2,17 +2,16 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v6.33.1
-// source: internal/proto/entry.proto
+// source: internal/models/entry.proto
 
-package proto
+package models
 
 import (
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
-
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -24,7 +23,7 @@ const (
 
 type Entry struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ColumnId      uint32                 `protobuf:"varint,1,opt,name=column_id,json=columnId,proto3" json:"column_id,omitempty"`
+	ColumnId      uint64                 `protobuf:"varint,1,opt,name=column_id,json=columnId,proto3" json:"column_id,omitempty"`
 	RowId         uint64                 `protobuf:"varint,2,opt,name=row_id,json=rowId,proto3" json:"row_id,omitempty"`
 	Payload       []byte                 `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -33,7 +32,7 @@ type Entry struct {
 
 func (x *Entry) Reset() {
 	*x = Entry{}
-	mi := &file_internal_proto_entry_proto_msgTypes[0]
+	mi := &file_internal_models_entry_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +44,7 @@ func (x *Entry) String() string {
 func (*Entry) ProtoMessage() {}
 
 func (x *Entry) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_entry_proto_msgTypes[0]
+	mi := &file_internal_models_entry_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,10 +57,10 @@ func (x *Entry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Entry.ProtoReflect.Descriptor instead.
 func (*Entry) Descriptor() ([]byte, []int) {
-	return file_internal_proto_entry_proto_rawDescGZIP(), []int{0}
+	return file_internal_models_entry_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Entry) GetColumnId() uint32 {
+func (x *Entry) GetColumnId() uint64 {
 	if x != nil {
 		return x.ColumnId
 	}
@@ -82,36 +81,33 @@ func (x *Entry) GetPayload() []byte {
 	return nil
 }
 
-var File_internal_proto_entry_proto protoreflect.FileDescriptor
+var File_internal_models_entry_proto protoreflect.FileDescriptor
 
-const file_internal_proto_entry_proto_rawDesc = "" +
+const file_internal_models_entry_proto_rawDesc = "" +
 	"\n" +
-	"\x1ainternal/proto/entry.proto\x12\x05proto\"U\n" +
+	"\x1binternal/models/entry.proto\x12\x06models\"U\n" +
 	"\x05Entry\x12\x1b\n" +
-	"\tcolumn_id\x18\x01 \x01(\rR\bcolumnId\x12\x15\n" +
+	"\tcolumn_id\x18\x01 \x01(\x04R\bcolumnId\x12\x15\n" +
 	"\x06row_id\x18\x02 \x01(\x04R\x05rowId\x12\x18\n" +
-	"\apayload\x18\x03 \x01(\fR\apayloadB3Z1github.com/openlyfree/teensy-store/internal/protob\x06proto3"
+	"\apayload\x18\x03 \x01(\fR\apayloadB4Z2github.com/openlyfree/teensy-store/internal/modelsb\x06proto3"
 
 var (
-	file_internal_proto_entry_proto_rawDescOnce sync.Once
-	file_internal_proto_entry_proto_rawDescData []byte
+	file_internal_models_entry_proto_rawDescOnce sync.Once
+	file_internal_models_entry_proto_rawDescData []byte
 )
 
-func file_internal_proto_entry_proto_rawDescGZIP() []byte {
-	file_internal_proto_entry_proto_rawDescOnce.Do(func() {
-		file_internal_proto_entry_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_internal_proto_entry_proto_rawDesc), len(file_internal_proto_entry_proto_rawDesc)))
+func file_internal_models_entry_proto_rawDescGZIP() []byte {
+	file_internal_models_entry_proto_rawDescOnce.Do(func() {
+		file_internal_models_entry_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_internal_models_entry_proto_rawDesc), len(file_internal_models_entry_proto_rawDesc)))
 	})
-	return file_internal_proto_entry_proto_rawDescData
+	return file_internal_models_entry_proto_rawDescData
 }
 
-var (
-	file_internal_proto_entry_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-	file_internal_proto_entry_proto_goTypes  = []any{
-		(*Entry)(nil), // 0: proto.Entry
-	}
-)
-
-var file_internal_proto_entry_proto_depIdxs = []int32{
+var file_internal_models_entry_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_internal_models_entry_proto_goTypes = []any{
+	(*Entry)(nil), // 0: models.Entry
+}
+var file_internal_models_entry_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
 	0, // [0:0] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -119,26 +115,26 @@ var file_internal_proto_entry_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_internal_proto_entry_proto_init() }
-func file_internal_proto_entry_proto_init() {
-	if File_internal_proto_entry_proto != nil {
+func init() { file_internal_models_entry_proto_init() }
+func file_internal_models_entry_proto_init() {
+	if File_internal_models_entry_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_proto_entry_proto_rawDesc), len(file_internal_proto_entry_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_models_entry_proto_rawDesc), len(file_internal_models_entry_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_internal_proto_entry_proto_goTypes,
-		DependencyIndexes: file_internal_proto_entry_proto_depIdxs,
-		MessageInfos:      file_internal_proto_entry_proto_msgTypes,
+		GoTypes:           file_internal_models_entry_proto_goTypes,
+		DependencyIndexes: file_internal_models_entry_proto_depIdxs,
+		MessageInfos:      file_internal_models_entry_proto_msgTypes,
 	}.Build()
-	File_internal_proto_entry_proto = out.File
-	file_internal_proto_entry_proto_goTypes = nil
-	file_internal_proto_entry_proto_depIdxs = nil
+	File_internal_models_entry_proto = out.File
+	file_internal_models_entry_proto_goTypes = nil
+	file_internal_models_entry_proto_depIdxs = nil
 }
