@@ -1,4 +1,4 @@
-module github.com/openlyfree/teensy-store
+module github.com/openlyfree/dappendble
 
 go 1.26.1
 

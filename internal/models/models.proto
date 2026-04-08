@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package models;
 
-option go_package = "github.com/openlyfree/teensy-store/internal/models"; 
+option go_package = "github.com/openlyfree/dappendble/internal/models";
 
 message Entry {
   uint64 column_id = 1;

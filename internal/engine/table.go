@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/openlyfree/teensy-store/internal/models"
+	"github.com/openlyfree/dappendble/internal/models"
 	"google.golang.org/protobuf/proto"
 )
 
