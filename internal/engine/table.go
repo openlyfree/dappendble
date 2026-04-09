@@ -5,36 +5,56 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/openlyfree/dappendble/internal/models"
 	"google.golang.org/protobuf/proto"
 )
 
+// switch to flat array for index later
 type Table struct {
 	Name   string
 	file   *os.File
 	index  map[uint64]map[uint64]int64
+	schema *models.Schema
 	keeper sync.RWMutex
 }
 
-func NewTable(name string, path string) (*Table, error) {
-	realPath := filepath.Join(path, name+".tytb")
+// expects path to contain name and extension of file
+func NewTable(path string, schema *models.Schema) (*Table, error) {
+	//write schema to db meta file
+	dbmeta, err := os.OpenFile(path+".meta", os.O_RDWR|os.O_CREATE, 0o644)
+	if err != nil {
+		return nil, err
+	}
+	defer dbmeta.Close()
+	schemaBytes, err := proto.Marshal(schema)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := dbmeta.Write(schemaBytes); err != nil {
+		return nil, err
+	}
+	dbmeta.Sync()
+	dbmeta.Close()
 
-	f, err := os.OpenFile(realPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0o644)
+	// open table file
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0o644)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Table{
-		Name:   name,
+		Name:   strings.Split(filepath.Base(path), ".")[0],
 		file:   f,
 		index:  make(map[uint64]map[uint64]int64),
+		schema: schema,
 		keeper: sync.RWMutex{},
 	}, nil
 }
 
-func (t *Table) FileAdd(columnId uint64, rowId uint64, data []byte) error {
+func (t *Table) Add(columnId uint64, rowId uint64, data []byte) error {
 	t.keeper.Lock()
 	defer t.keeper.Unlock()
 
@@ -72,32 +92,51 @@ func (t *Table) FileAdd(columnId uint64, rowId uint64, data []byte) error {
 	return nil
 }
 
-func LoadTable(name string, path string) (*Table, error) {
-	realPath := filepath.Join(path, name+".tytb")
+func LoadTable(path string) (*Table, error) {
 
-	f, err := os.OpenFile(realPath, os.O_RDWR|os.O_CREATE, 0o644)
+	// get schema from meta file
+	dbmeta, err := os.OpenFile(path+".meta", os.O_RDONLY, 0o644)
+	if err != nil {
+		return nil, err
+	}
+	defer dbmeta.Close()
+
+	schemaBytes, err := io.ReadAll(dbmeta)
+	if err != nil {
+		return nil, err
+	}
+	dbmeta.Close()
+	var schema models.Schema
+	if err := proto.Unmarshal(schemaBytes, &schema); err != nil {
+		return nil, err
+	}
+
+	// open table file
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0o644)
 	if err != nil {
 		return nil, err
 	}
 
 	t := &Table{
-		Name:   name,
+		Name:   strings.Split(filepath.Base(path), ".")[0],
 		file:   f,
 		index:  make(map[uint64]map[uint64]int64),
+		schema: &schema,
 		keeper: sync.RWMutex{},
 	}
 
 	var off int64 = 0
+	header := make([]byte, 4)
 	for {
-		header := make([]byte, 4)
+
 		if _, err := f.ReadAt(header, off); err != nil {
 			if err == io.EOF {
 				break
 			}
 			return nil, err
 		}
-
 		size := binary.LittleEndian.Uint32(header)
+
 		data := make([]byte, size)
 		if _, err := f.ReadAt(data, off+4); err != nil {
 			return nil, err
@@ -127,6 +166,7 @@ func LoadTable(name string, path string) (*Table, error) {
 
 	return t, nil
 }
+
 func (t *Table) At(columnId uint64, rowId uint64) ([]byte, error) {
 	t.keeper.RLock()
 	defer t.keeper.RUnlock()
@@ -164,7 +204,7 @@ func (t *Table) Delete(columnId uint64, rowId uint64) error {
 	if !t.checkValid(columnId, rowId) {
 		return os.ErrNotExist
 	}
-	if err := t.FileAdd(columnId, rowId, nil); err != nil {
+	if err := t.Add(columnId, rowId, nil); err != nil {
 		return err
 	}
 	if col, ok := t.index[columnId]; ok {

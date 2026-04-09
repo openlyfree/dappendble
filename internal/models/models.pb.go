@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v7.34.1
-// source: models.proto
+// source: internal/models/models.proto
 
 package models
 
@@ -21,6 +21,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type ColumnType int32
+
+const (
+	ColumnType_COLUMN_TYPE_BYTES   ColumnType = 0
+	ColumnType_COLUMN_TYPE_STRING  ColumnType = 1
+	ColumnType_COLUMN_TYPE_INTEGER ColumnType = 2
+	ColumnType_COLUMN_TYPE_FLOAT   ColumnType = 3
+)
+
+// Enum value maps for ColumnType.
+var (
+	ColumnType_name = map[int32]string{
+		0: "COLUMN_TYPE_BYTES",
+		1: "COLUMN_TYPE_STRING",
+		2: "COLUMN_TYPE_INTEGER",
+		3: "COLUMN_TYPE_FLOAT",
+	}
+	ColumnType_value = map[string]int32{
+		"COLUMN_TYPE_BYTES":   0,
+		"COLUMN_TYPE_STRING":  1,
+		"COLUMN_TYPE_INTEGER": 2,
+		"COLUMN_TYPE_FLOAT":   3,
+	}
+)
+
+func (x ColumnType) Enum() *ColumnType {
+	p := new(ColumnType)
+	*p = x
+	return p
+}
+
+func (x ColumnType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ColumnType) Descriptor() protoreflect.EnumDescriptor {
+	return file_internal_models_models_proto_enumTypes[0].Descriptor()
+}
+
+func (ColumnType) Type() protoreflect.EnumType {
+	return &file_internal_models_models_proto_enumTypes[0]
+}
+
+func (x ColumnType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ColumnType.Descriptor instead.
+func (ColumnType) EnumDescriptor() ([]byte, []int) {
+	return file_internal_models_models_proto_rawDescGZIP(), []int{0}
+}
+
 type Entry struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ColumnId      uint64                 `protobuf:"varint,1,opt,name=column_id,json=columnId,proto3" json:"column_id,omitempty"`
@@ -32,7 +84,7 @@ type Entry struct {
 
 func (x *Entry) Reset() {
 	*x = Entry{}
-	mi := &file_models_proto_msgTypes[0]
+	mi := &file_internal_models_models_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +96,7 @@ func (x *Entry) String() string {
 func (*Entry) ProtoMessage() {}
 
 func (x *Entry) ProtoReflect() protoreflect.Message {
-	mi := &file_models_proto_msgTypes[0]
+	mi := &file_internal_models_models_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +109,7 @@ func (x *Entry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Entry.ProtoReflect.Descriptor instead.
 func (*Entry) Descriptor() ([]byte, []int) {
-	return file_models_proto_rawDescGZIP(), []int{0}
+	return file_internal_models_models_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Entry) GetColumnId() uint64 {
@@ -81,60 +133,192 @@ func (x *Entry) GetPayload() []byte {
 	return nil
 }
 
-var File_models_proto protoreflect.FileDescriptor
+type Schema struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Columns       []*Column              `protobuf:"bytes,1,rep,name=columns,proto3" json:"columns,omitempty"`
+	Offset        []int64                `protobuf:"varint,2,rep,packed,name=offset,proto3" json:"offset,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
 
-const file_models_proto_rawDesc = "" +
+func (x *Schema) Reset() {
+	*x = Schema{}
+	mi := &file_internal_models_models_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Schema) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Schema) ProtoMessage() {}
+
+func (x *Schema) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_models_models_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Schema.ProtoReflect.Descriptor instead.
+func (*Schema) Descriptor() ([]byte, []int) {
+	return file_internal_models_models_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Schema) GetColumns() []*Column {
+	if x != nil {
+		return x.Columns
+	}
+	return nil
+}
+
+func (x *Schema) GetOffset() []int64 {
+	if x != nil {
+		return x.Offset
+	}
+	return nil
+}
+
+type Column struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Type          ColumnType             `protobuf:"varint,3,opt,name=type,proto3,enum=models.ColumnType" json:"type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Column) Reset() {
+	*x = Column{}
+	mi := &file_internal_models_models_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Column) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Column) ProtoMessage() {}
+
+func (x *Column) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_models_models_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Column.ProtoReflect.Descriptor instead.
+func (*Column) Descriptor() ([]byte, []int) {
+	return file_internal_models_models_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Column) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *Column) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Column) GetType() ColumnType {
+	if x != nil {
+		return x.Type
+	}
+	return ColumnType_COLUMN_TYPE_BYTES
+}
+
+var File_internal_models_models_proto protoreflect.FileDescriptor
+
+const file_internal_models_models_proto_rawDesc = "" +
 	"\n" +
-	"\fmodels.proto\x12\x06models\"U\n" +
+	"\x1cinternal/models/models.proto\x12\x06models\"U\n" +
 	"\x05Entry\x12\x1b\n" +
 	"\tcolumn_id\x18\x01 \x01(\x04R\bcolumnId\x12\x15\n" +
 	"\x06row_id\x18\x02 \x01(\x04R\x05rowId\x12\x18\n" +
-	"\apayload\x18\x03 \x01(\fR\apayloadB2Z0github.com/openlyfree/dappendble/internal/modelsb\x06proto3"
+	"\apayload\x18\x03 \x01(\fR\apayload\"J\n" +
+	"\x06Schema\x12(\n" +
+	"\acolumns\x18\x01 \x03(\v2\x0e.models.ColumnR\acolumns\x12\x16\n" +
+	"\x06offset\x18\x02 \x03(\x03R\x06offset\"T\n" +
+	"\x06Column\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12&\n" +
+	"\x04type\x18\x03 \x01(\x0e2\x12.models.ColumnTypeR\x04type*k\n" +
+	"\n" +
+	"ColumnType\x12\x15\n" +
+	"\x11COLUMN_TYPE_BYTES\x10\x00\x12\x16\n" +
+	"\x12COLUMN_TYPE_STRING\x10\x01\x12\x17\n" +
+	"\x13COLUMN_TYPE_INTEGER\x10\x02\x12\x15\n" +
+	"\x11COLUMN_TYPE_FLOAT\x10\x03B2Z0github.com/openlyfree/dappendble/internal/modelsb\x06proto3"
 
 var (
-	file_models_proto_rawDescOnce sync.Once
-	file_models_proto_rawDescData []byte
+	file_internal_models_models_proto_rawDescOnce sync.Once
+	file_internal_models_models_proto_rawDescData []byte
 )
 
-func file_models_proto_rawDescGZIP() []byte {
-	file_models_proto_rawDescOnce.Do(func() {
-		file_models_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_models_proto_rawDesc), len(file_models_proto_rawDesc)))
+func file_internal_models_models_proto_rawDescGZIP() []byte {
+	file_internal_models_models_proto_rawDescOnce.Do(func() {
+		file_internal_models_models_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_internal_models_models_proto_rawDesc), len(file_internal_models_models_proto_rawDesc)))
 	})
-	return file_models_proto_rawDescData
+	return file_internal_models_models_proto_rawDescData
 }
 
-var file_models_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_models_proto_goTypes = []any{
-	(*Entry)(nil), // 0: models.Entry
+var file_internal_models_models_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_internal_models_models_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_internal_models_models_proto_goTypes = []any{
+	(ColumnType)(0), // 0: models.ColumnType
+	(*Entry)(nil),   // 1: models.Entry
+	(*Schema)(nil),  // 2: models.Schema
+	(*Column)(nil),  // 3: models.Column
 }
-var file_models_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+var file_internal_models_models_proto_depIdxs = []int32{
+	3, // 0: models.Schema.columns:type_name -> models.Column
+	0, // 1: models.Column.type:type_name -> models.ColumnType
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_models_proto_init() }
-func file_models_proto_init() {
-	if File_models_proto != nil {
+func init() { file_internal_models_models_proto_init() }
+func file_internal_models_models_proto_init() {
+	if File_internal_models_models_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_models_proto_rawDesc), len(file_models_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   1,
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_models_models_proto_rawDesc), len(file_internal_models_models_proto_rawDesc)),
+			NumEnums:      1,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_models_proto_goTypes,
-		DependencyIndexes: file_models_proto_depIdxs,
-		MessageInfos:      file_models_proto_msgTypes,
+		GoTypes:           file_internal_models_models_proto_goTypes,
+		DependencyIndexes: file_internal_models_models_proto_depIdxs,
+		EnumInfos:         file_internal_models_models_proto_enumTypes,
+		MessageInfos:      file_internal_models_models_proto_msgTypes,
 	}.Build()
-	File_models_proto = out.File
-	file_models_proto_goTypes = nil
-	file_models_proto_depIdxs = nil
+	File_internal_models_models_proto = out.File
+	file_internal_models_models_proto_goTypes = nil
+	file_internal_models_models_proto_depIdxs = nil
 }
