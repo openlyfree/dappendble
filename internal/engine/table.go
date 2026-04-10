@@ -12,11 +12,15 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// switch to flat array for index later
+type Coordinate struct {
+	ColId uint64
+	RowId uint64
+}
+
 type Table struct {
 	Name   string
 	file   *os.File
-	index  map[uint64]map[uint64]int64
+	index  map[Coordinate]int64
 	schema *models.Schema
 	keeper sync.RWMutex
 }
@@ -48,7 +52,7 @@ func NewTable(path string, schema *models.Schema) (*Table, error) {
 	return &Table{
 		Name:   strings.Split(filepath.Base(path), ".")[0],
 		file:   f,
-		index:  make(map[uint64]map[uint64]int64),
+		index:  make(map[Coordinate]int64),
 		schema: schema,
 		keeper: sync.RWMutex{},
 	}, nil
@@ -85,10 +89,9 @@ func (t *Table) Add(columnId uint64, rowId uint64, data []byte) error {
 		return err
 	}
 
-	if t.index[columnId] == nil {
-		t.index[columnId] = make(map[uint64]int64)
+	if t.index[Coordinate{ColId: columnId, RowId: rowId}] == 0 {
+		t.index[Coordinate{ColId: columnId, RowId: rowId}] = off + 4
 	}
-	t.index[columnId][rowId] = off + 4
 	return nil
 }
 
@@ -120,7 +123,7 @@ func LoadTable(path string) (*Table, error) {
 	t := &Table{
 		Name:   strings.Split(filepath.Base(path), ".")[0],
 		file:   f,
-		index:  make(map[uint64]map[uint64]int64),
+		index:  make(map[Coordinate]int64),
 		schema: &schema,
 		keeper: sync.RWMutex{},
 	}
@@ -148,17 +151,9 @@ func LoadTable(path string) (*Table, error) {
 		}
 
 		if m.Payload == nil {
-			if col, ok := t.index[m.ColumnId]; ok {
-				delete(col, m.RowId)
-				if len(col) == 0 {
-					delete(t.index, m.ColumnId)
-				}
-			}
+			delete(t.index, Coordinate{ColId: m.ColumnId, RowId: m.RowId})
 		} else {
-			if t.index[m.ColumnId] == nil {
-				t.index[m.ColumnId] = make(map[uint64]int64)
-			}
-			t.index[m.ColumnId][m.RowId] = off + 4
+			t.index[Coordinate{ColId: m.ColumnId, RowId: m.RowId}] = off + 4
 		}
 
 		off += 4 + int64(size)
@@ -175,7 +170,7 @@ func (t *Table) At(columnId uint64, rowId uint64) ([]byte, error) {
 		return nil, os.ErrNotExist
 	}
 
-	dataOffset := t.index[columnId][rowId]
+	dataOffset := t.index[Coordinate{ColId: columnId, RowId: rowId}]
 
 	header := make([]byte, 4)
 	if _, err := t.file.ReadAt(header, dataOffset-4); err != nil {
@@ -207,24 +202,12 @@ func (t *Table) Delete(columnId uint64, rowId uint64) error {
 	if err := t.Add(columnId, rowId, nil); err != nil {
 		return err
 	}
-	if col, ok := t.index[columnId]; ok {
-		delete(col, rowId)
-		if len(col) == 0 {
-			delete(t.index, columnId)
-		}
-	}
+	delete(t.index, Coordinate{ColId: columnId, RowId: rowId})
 
 	return nil
 }
 
 func (t *Table) checkValid(columnId uint64, rowId uint64) bool {
-	col, ok := t.index[columnId]
-	if !ok {
-		return false
-	}
-	_, ok = col[rowId]
-	if !ok {
-		return false
-	}
-	return true
+	_, ok := t.index[Coordinate{ColId: columnId, RowId: rowId}]
+	return ok
 }
