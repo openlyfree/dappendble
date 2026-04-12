@@ -12,7 +12,7 @@ import (
 func TestTable_Concurrency(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "concurrency.db")
 	schema := &models.Schema{
-		Columns: []*models.Column{{Id: 1, Type: models.ColumnType_COLUMN_TYPE_STRING}},
+		Columns: []*models.Column{{Id: 1, Type: models.COLUMN_TYPE_STRING, Name: "col1"}},
 	}
 	tbl, _ := NewTable(path, schema)
 
@@ -56,6 +56,60 @@ func TestTable_Concurrency(t *testing.T) {
 			if err != nil || string(got) != expected {
 				t.Errorf("Data loss at row %d. Expected %s, got %s", rowID, expected, got)
 			}
+		}
+	}
+}
+
+func BenchmarkTableAdd(b *testing.B) {
+	path := filepath.Join(b.TempDir(), "bench_add.db")
+	schema := &models.Schema{
+		Columns: []*models.Column{{Id: 1, Type: models.COLUMN_TYPE_BYTES, Name: "col1"}},
+	}
+
+	tbl, err := NewTable(path, schema)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	data := []byte("benchmark-payload")
+	b.SetBytes(int64(len(data)))
+	b.ReportAllocs()
+	
+
+	for i := 0; b.Loop(); i++ {
+		if err := tbl.Add(1, uint64(i), data); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkTableAt(b *testing.B) {
+	path := filepath.Join(b.TempDir(), "bench_at.db")
+	schema := &models.Schema{
+		Columns: []*models.Column{{Id: 1, Type: models.COLUMN_TYPE_BYTES, Name: "col1"}},
+	}
+
+	tbl, err := NewTable(path, schema)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	data := []byte("benchmark-payload")
+	const count = 10000
+	for i := range count {
+		if err := tbl.Add(1, uint64(i), data); err != nil {
+			b.Fatal(err)
+		}
+	}
+
+	b.SetBytes(int64(len(data)))
+	b.ReportAllocs()
+	
+
+	for i := 0; b.Loop(); i++ {
+		idx := uint64(i % count)
+		if _, err := tbl.At(1, idx); err != nil {
+			b.Fatal(err)
 		}
 	}
 }
