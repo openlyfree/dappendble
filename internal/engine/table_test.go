@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/openlyfree/dappendble/internal/models"
 )
@@ -112,4 +113,32 @@ func BenchmarkTableAt(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
+}
+
+func BenchmarkTableAddOpsPerSec(b *testing.B) {
+    path := filepath.Join(b.TempDir(), "bench_add_ops.db")
+    schema := &models.Schema{
+        Columns: []*models.Column{{Id: 1, Type: models.COLUMN_TYPE_BYTES, Name: "col1"}},
+    }
+
+    tbl, err := NewTable(path, schema)
+    if err != nil {
+        b.Fatal(err)
+    }
+
+    data := []byte("benchmark-payload")
+    b.SetBytes(int64(len(data)))
+    b.ReportAllocs()
+
+    b.ResetTimer()
+    start := time.Now()
+    for i := 0; i < b.N; i++ {
+        if err := tbl.Add(1, uint64(i), data); err != nil {
+            b.Fatal(err)
+        }
+    }
+    elapsed := time.Since(start)
+
+    opsPerSec := float64(b.N) / elapsed.Seconds()
+    b.ReportMetric(opsPerSec, "ops/s")
 }
