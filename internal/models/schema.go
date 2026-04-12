@@ -28,7 +28,6 @@ func (s *Schema) MarshalBin(b *[]byte) {
 		binary.LittleEndian.PutUint64((*b)[16:24], uint64(v.Type))
 		binary.LittleEndian.PutUint64((*b)[24:32], uint64(len(v.Name)))
 		copy((*b)[32:32+len(v.Name)], v.Name)
-		*b = (*b)[32+len(v.Name):]
 	}
 }
 

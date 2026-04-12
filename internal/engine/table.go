@@ -89,7 +89,7 @@ func (t *Table) Add(columnId uint64, rowId uint64, data []byte) error {
 func LoadTable(path string) (*Table, error) {
 
 	// get schema from meta file
-	dbmeta, err := os.OpenFile(path+".meta", os.O_RDONLY|os.O_TRUNC, 0o644)
+	dbmeta, err := os.OpenFile(path+".meta", os.O_RDONLY, 0o644)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func LoadTable(path string) (*Table, error) {
 	b := []byte(m)
 	defer m.Unmap()
 	for off := int64(0); ; off += int64(en.Size()) {
-		if off >= int64(len(m)) {
+		if off >= int64(len(b)) || len(b) < 8 {
 			break
 		}
 		en.UnmarshalBin(&b)
