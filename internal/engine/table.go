@@ -25,6 +25,10 @@ type Table struct {
 	keeper sync.RWMutex
 }
 
+func (t *Table) Schema() *models.Schema {
+	return t.schema
+}
+
 // expects path to contain name and extension of file
 func NewTable(path string, schema *models.Schema) (*Table, error) {
 	//write schema to db meta file
@@ -121,12 +125,16 @@ func LoadTable(path string) (*Table, error) {
 	m, _ := mmap.Map(f, mmap.RDWR, 0)
 	b := []byte(m)
 	defer m.Unmap()
-	for off := int64(0); ; off += int64(en.Size()) {
-		if off >= int64(len(b)) || len(b) < 8 {
+	off := int64(0)
+	for len(b) >= 8 {
+		entrySize := int64(binary.LittleEndian.Uint64(b))
+		if entrySize < 24 || entrySize > int64(len(b)) {
+			// Incomplete entry or corrupted size, break to avoid panic
 			break
 		}
 		en.UnmarshalBin(&b)
 		t.index[Coordinate{ColId: en.ColId, RowId: en.RowId}] = off
+		off += entrySize
 	}
 	return t, nil
 }
