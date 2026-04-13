@@ -19,7 +19,7 @@ require (
 )
 
 require (
-	github.com/mattn/go-sqlite3 v1.14.42 // indirect
+	github.com/mattn/go-sqlite3 v1.14.42
 	golang.org/x/sys v0.42.0 // indirect
 	modernc.org/sqlite v1.48.2
 )

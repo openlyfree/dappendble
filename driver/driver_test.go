@@ -151,7 +151,7 @@ func BenchmarkDappendble_OpsPerSec(b *testing.B) {
 func BenchmarkSQLite_Insert(b *testing.B) {
 	dbPath := "./bench_sqlite.db"
 	os.Remove(dbPath)
-	db, _ := sql.Open("sqlite3", dbPath)
+	db, _ := sql.Open("sqlite3", dbPath+"?_journal_mode=WAL&_synchronous=NORMAL")
 	defer os.Remove(dbPath)
 	db.Exec("CREATE TABLE bench (id INT, val STRING)")
 
