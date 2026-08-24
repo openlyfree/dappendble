@@ -22,12 +22,15 @@ const (
 )
 
 func (s *Schema) MarshalBin(b *[]byte) {
-	binary.LittleEndian.PutUint64((*b)[0:8], uint64(len(s.Columns)))
+	off := 0
+	binary.LittleEndian.PutUint64((*b)[off:off+8], uint64(len(s.Columns)))
+	off += 8
 	for _, v := range s.Columns {
-		binary.LittleEndian.PutUint64((*b)[8:16], v.Id)
-		binary.LittleEndian.PutUint64((*b)[16:24], uint64(v.Type))
-		binary.LittleEndian.PutUint64((*b)[24:32], uint64(len(v.Name)))
-		copy((*b)[32:32+len(v.Name)], v.Name)
+		binary.LittleEndian.PutUint64((*b)[off:off+8], v.Id)
+		binary.LittleEndian.PutUint64((*b)[off+8:off+16], uint64(v.Type))
+		binary.LittleEndian.PutUint64((*b)[off+16:off+24], uint64(len(v.Name)))
+		copy((*b)[off+24:off+24+len(v.Name)], v.Name)
+		off += 24 + len(v.Name)
 	}
 }
 

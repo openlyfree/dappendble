@@ -25,7 +25,7 @@ func (d *DappendDriver) Open(name string) (driver.Conn, error) {
 	}
 	_ = os.MkdirAll(dbPath, 0755)
 
-	m, err := engine.NewManager(dbPath)
+	m, err := engine.Acquire(dbPath)
 	if err != nil {
 		return nil, err
 	}
@@ -39,11 +39,11 @@ func init() {
 	sql.Register("dappendble", &DappendDriver{})
 }
 
-
 type conn struct {
-	mgr   *engine.Manager
-	cache map[string]*ast.AST
-	mu    sync.RWMutex
+	mgr      *engine.Manager
+	cache    map[string]*ast.AST
+	mu       sync.RWMutex
+	activeTx *engine.Tx
 }
 
 func (c *conn) Prepare(query string) (driver.Stmt, error) {
@@ -75,9 +75,35 @@ func (c *conn) Prepare(query string) (driver.Stmt, error) {
 	return &stmt{conn: c, query: query, ast: astObj}, nil
 }
 
-func (c *conn) Close() error              { return nil }
-func (c *conn) Begin() (driver.Tx, error) { return &tx{}, nil }
+func (c *conn) Close() error {
+	c.mu.Lock()
+	if c.activeTx != nil {
+		_ = c.activeTx.Rollback()
+		c.activeTx = nil
+	}
+	c.mu.Unlock()
+	return c.mgr.Close()
+}
 
+func (c *conn) Begin() (driver.Tx, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.activeTx != nil {
+		return nil, fmt.Errorf("transaction already started")
+	}
+	tx, err := c.mgr.Begin()
+	if err != nil {
+		return nil, err
+	}
+	c.activeTx = tx
+	return &sqlTx{conn: c}, nil
+}
+
+func (c *conn) txOrNil() *engine.Tx {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.activeTx
+}
 
 type stmt struct {
 	conn  *conn
@@ -92,6 +118,9 @@ func (s *stmt) Exec(args []driver.Value) (driver.Result, error) {
 
 	switch st := s.ast.Statements[0].(type) {
 	case *ast.CreateTableStatement:
+		if s.conn.txOrNil() != nil {
+			return nil, engine.ErrDDLInTx
+		}
 		schema := &models.Schema{}
 		for i, col := range st.Columns {
 			schema.Columns = append(schema.Columns, &models.Column{
@@ -104,18 +133,34 @@ func (s *stmt) Exec(args []driver.Value) (driver.Result, error) {
 		return driver.RowsAffected(0), err
 
 	case *ast.InsertStatement:
-		tbl, ok := s.conn.mgr.Tables[st.TableName]
-		if !ok {
+		if _, ok := s.conn.mgr.Table(st.TableName); !ok {
 			return nil, fmt.Errorf("table %s not found", st.TableName)
 		}
 		colID := uint64(args[0].(int64))
 		rowID := uint64(args[1].(int64))
 		data := fmt.Appendf(nil, "%v", args[2])
 
-		err := tbl.Add(colID, rowID, data)
-		return driver.RowsAffected(1), err
+		if err := s.applyWrite(st.TableName, colID, rowID, data); err != nil {
+			return nil, err
+		}
+		return driver.RowsAffected(1), nil
 	}
 	return nil, fmt.Errorf("unsupported exec statement")
+}
+
+func (s *stmt) applyWrite(table string, colID, rowID uint64, data []byte) error {
+	if tx := s.conn.txOrNil(); tx != nil {
+		return tx.Add(table, colID, rowID, data)
+	}
+	tx, err := s.conn.mgr.Begin()
+	if err != nil {
+		return err
+	}
+	if err := tx.Add(table, colID, rowID, data); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	return tx.Commit()
 }
 
 func (s *stmt) Query(args []driver.Value) (driver.Rows, error) {
@@ -132,7 +177,7 @@ func (s *stmt) Query(args []driver.Value) (driver.Rows, error) {
 		return nil, fmt.Errorf("unsupported query statement")
 	}
 
-	tbl, ok := s.conn.mgr.Tables[tableName]
+	tbl, ok := s.conn.mgr.Table(tableName)
 	if !ok {
 		return nil, fmt.Errorf("table %s not found", tableName)
 	}
@@ -174,7 +219,7 @@ func (s *stmt) Query(args []driver.Value) (driver.Rows, error) {
 
 	var values [][]byte
 	for _, colID := range colIDs {
-		data, err := tbl.At(colID, rowID)
+		data, err := s.readCell(tbl, tableName, colID, rowID)
 		if err != nil {
 			if os.IsNotExist(err) {
 				values = append(values, nil)
@@ -187,6 +232,13 @@ func (s *stmt) Query(args []driver.Value) (driver.Rows, error) {
 	}
 
 	return &rows{cols: cols, values: values}, nil
+}
+
+func (s *stmt) readCell(tbl *engine.Table, tableName string, colID, rowID uint64) ([]byte, error) {
+	if tx := s.conn.txOrNil(); tx != nil {
+		return tx.At(tableName, colID, rowID)
+	}
+	return tbl.At(colID, rowID)
 }
 
 func (s *stmt) getRowIdFromWhere(where ast.Expression, args []driver.Value) (uint64, error) {
@@ -231,13 +283,38 @@ func (r *rows) Next(dest []driver.Value) error {
 		return io.EOF
 	}
 	for i, v := range r.values {
-		dest[i] = v
+		if v == nil {
+			dest[i] = nil
+		} else {
+			dest[i] = v
+		}
 	}
 	r.done = true
 	return nil
 }
 
-type tx struct{}
+type sqlTx struct {
+	conn *conn
+}
 
-func (t *tx) Commit() error   { return nil }
-func (t *tx) Rollback() error { return nil }
+func (t *sqlTx) Commit() error {
+	t.conn.mu.Lock()
+	defer t.conn.mu.Unlock()
+	if t.conn.activeTx == nil {
+		return engine.ErrTxDone
+	}
+	err := t.conn.activeTx.Commit()
+	t.conn.activeTx = nil
+	return err
+}
+
+func (t *sqlTx) Rollback() error {
+	t.conn.mu.Lock()
+	defer t.conn.mu.Unlock()
+	if t.conn.activeTx == nil {
+		return engine.ErrTxDone
+	}
+	err := t.conn.activeTx.Rollback()
+	t.conn.activeTx = nil
+	return err
+}
